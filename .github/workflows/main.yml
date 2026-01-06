@@ -1,0 +1,61 @@
+name: Minecraft Bot
+
+on:
+  workflow_dispatch:   # manual start button
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install mineflayer
+        run: |
+          npm init -y
+          npm install mineflayer
+
+      - name: Create bot.js
+        run: |
+          cat << 'EOF' > bot.js
+          const mineflayer = require('mineflayer')
+
+          const bot = mineflayer.createBot({
+            host: 'konoha-hvfc.aternos.me',
+            port: 56709,
+            username: 'RandomBot'
+          })
+
+          bot.once('spawn', () => {
+            console.log('Bot spawned')
+
+            setInterval(() => {
+              bot.setControlState('forward', false)
+              bot.setControlState('back', false)
+              bot.setControlState('left', false)
+              bot.setControlState('right', false)
+              bot.setControlState('jump', false)
+
+              const actions = ['forward', 'back', 'left', 'right', 'jump']
+              const action = actions[Math.floor(Math.random() * actions.length)]
+
+              bot.setControlState(action, true)
+
+              setTimeout(() => {
+                bot.setControlState(action, false)
+              }, Math.random() * 2000 + 500)
+            }, 3000)
+          })
+
+          bot.on('kicked', reason => console.log('Kicked:', reason))
+          bot.on('error', err => console.log('Error:', err))
+          EOF
+
+      - name: Start Minecraft Bot
+        run: node bot.js
